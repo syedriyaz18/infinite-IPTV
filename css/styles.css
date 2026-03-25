@@ -1,0 +1,808 @@
+/* ====================================================== */
+/*  styles.css (cleaned & developer-friendly version)    */
+/*  - Keeps original structure intact                    */
+/*  - Removes duplicate / conflicting blocks             */
+/*  - Adds fullscreen header override + bandwidth hook   */
+/*  - No JavaScript changes required                     */
+/* ====================================================== */
+
+/* =========================
+   RESET & BASE
+   ========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f5f5f5;
+  /* keep overflow handling to app container */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App / Page containers */
+#app-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#page-container {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ======================================================
+   SPLASH SCREEN
+   (kept as original intent, simplified naming, animation)
+   ====================================================== */
+.splash-container {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.splash-logo {
+  font-size: 72px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 50px;
+  letter-spacing: 4px;
+  animation: splashPulse 2s infinite;
+}
+
+.splash-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.splash-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  animation: splashBounce 1.5s infinite;
+}
+
+@keyframes splashPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes splashBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* ======================================================
+   PLAYER CONTAINER & LAYOUT
+   - kept structure consistent with your JS
+   ====================================================== */
+.player-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* -------------------------
+   PLAYER HEADER
+   - always visible (including fullscreen)
+   - minimal, compatible with existing markup
+   ------------------------- */
+.player-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* header child elements (kept class names for JS compatibility) */
+.player-back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color .2s ease;
+}
+.player-back-button:hover {
+  background-color: rgba(255,255,255,0.08);
+}
+
+.player-header-title {
+  flex: 1 1 auto;
+  font-size: 22px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* small icon-style buttons (settings / fullscreen) */
+.player-fullscreen-button,
+.player-settings-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s ease, background-color .15s ease;
+}
+.player-fullscreen-button:hover,
+.player-settings-button:hover {
+  transform: scale(1.12);
+  background-color: rgba(255,255,255,0.06);
+}
+
+/* -------------------------
+   NETWORK INDICATOR (pill)
+   - compatible fallback if JS does not set data attributes
+   - supports optional data-bandwidth attribute:
+     if present, pseudo-element shows "12.4 Mbps — "
+   ------------------------- */
+.network-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  margin-left: 12px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  min-height: 36px;
+}
+
+/* emoji / icon in first span - style it if present */
+.network-indicator > span:first-child {
+  font-size: 20px;
+}
+
+/* If your JS sets a data-bandwidth attribute on the container, this pseudo-element will show it:
+   format used: 12.4 Mbps —  (then the existing inner content shows percentage and Good/Slow)
+   This is intentionally non-breaking: if not present, nothing added.
+*/
+.network-indicator[data-bandwidth]:before {
+  content: attr(data-bandwidth) " Mbps — ";
+  color: #4CAF50;
+  font-weight: 800;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+/* Small helper to ensure inner text wraps nicely on small screens */
+.network-indicator > span {
+  white-space: nowrap;
+  display: inline-block;
+}
+
+/* -------------------------
+   LOADING INDICATOR & DEBUG PANEL
+   kept as inline elements to match player structure
+   ------------------------- */
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 900;
+  text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.6);
+  padding: 15px 24px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.debug-panel {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+  max-width: 340px;
+  z-index: 900;
+  border: 1px solid rgba(76,175,80,0.18);
+}
+
+/* ======================================================
+   VIDEO ELEMENT
+   - We keep header height accounting to avoid layout jumps
+   ====================================================== */
+#video-player,
+.player-video {
+  position: absolute;
+  top: 60px; /* header height */
+  left: 0;
+  width: 100%;
+  height: calc(100% - 60px);
+  background-color: #000;
+  object-fit: contain;
+}
+
+/* Fullscreen styling for video (make video fill viewport)
+   and ensure header remains visible in fullscreen by overriding rules
+*/
+#video-player:fullscreen,
+#video-player:-webkit-full-screen,
+#video-player:-moz-full-screen,
+#video-player:-ms-fullscreen,
+.player-video:fullscreen,
+.player-video:-webkit-full-screen,
+.player-video:-moz-full-screen,
+.player-video:-ms-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  object-fit: contain;
+}
+
+/* Ensure header stays visible when the document or element is in fullscreen */
+:fullscreen .player-header,
+:-webkit-full-screen .player-header,
+:-moz-full-screen .player-header,
+:-ms-fullscreen .player-header {
+  display: flex !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100000 !important;
+}
+
+/* When fullscreen, avoid hiding other app UI via broad selectors.
+   (We removed previous :fullscreen body > :not(#video-player) rules intentionally.)
+*/
+
+/* ======================================================
+   LOGIN PAGE (kept structure & sizes - restored)
+   ====================================================== */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+.login-form {
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 60px;
+  width: 100%;
+  max-width: 700px; /* ensures it centers but remains readable */
+  box-sizing: border-box;
+}
+
+.login-form h1 {
+  font-size: 48px;
+  margin-bottom: 50px;
+  text-align: center;
+  color: #333;
+}
+
+/* input styling */
+.input-group {
+  margin-bottom: 30px;
+}
+.input-group input {
+  width: 100%;
+  padding: 20px;
+  border: 3px solid #ddd;
+  border-radius: 12px;
+  box-sizing: border-box;
+  font-size: 24px;
+  height: 70px;
+}
+
+/* login button */
+.login-button {
+  width: 100%;
+  padding: 25px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 28px;
+  font-weight: 600;
+  transition: background-color .2s ease;
+  height: 80px;
+}
+.login-button:hover { background-color: #45a049; }
+
+/* ======================================================
+   MAIN HEADER (top bar for non-player pages)
+   ====================================================== */
+.header {
+  background-color: #333;
+  color: #fff;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.header h1 { font-size: 40px; margin: 0; }
+
+.back-button,
+.logout-button,
+.settings-button {
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 20px;
+  border: none;
+}
+
+.back-button { background-color: transparent; color: #fff; border: 2px solid #fff; }
+.logout-button { background-color: #f44336; color: white; }
+.settings-button { background-color: #2196F3; color: white; }
+
+/* icon button */
+.icon-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: 15px;
+  transition: transform .2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+.icon-button:hover { transform: scale(1.12); background-color: rgba(255,255,255,0.06); }
+
+/* ======================================================
+   MEDIA SELECTION / GRID (preserved & cleaned)
+   ====================================================== */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 100px; /* accounts for header */
+  padding-bottom: 40px;
+  box-sizing: border-box;
+}
+
+.media-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  max-width: 1400px;
+  width: 100%;
+  padding: 30px;
+  gap: 50px;
+  box-sizing: border-box;
+}
+
+.media-card {
+  width: 400px;
+  cursor: pointer;
+  transition: transform .3s, box-shadow .3s;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  background: #fff;
+}
+.media-card:hover { transform: scale(1.05); box-shadow: 0 15px 40px rgba(0,0,0,0.18); }
+
+.media-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+.media-label {
+  padding: 30px 25px;
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  background: #fff;
+}
+
+/* Grid container */
+.grid-container { padding: 40px; margin-top: 100px; box-sizing: border-box; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 30px;
+  justify-content: center;
+}
+.card {
+  background-color: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  cursor: pointer;
+  transition: transform .3s, box-shadow .3s;
+  aspect-ratio: 1/1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  text-align: center;
+}
+.card:hover { transform: translateY(-8px); box-shadow: 0 12px 30px rgba(0,0,0,0.14); }
+
+.card img { width: 100%; height: 150px; object-fit: cover; border-radius: 12px; margin-bottom: 20px; }
+
+.card-title { font-size: 22px; font-weight: 600; color: #333; }
+.card-subtitle { font-size: 18px; color: #666; margin-top: 10px; }
+
+/* ======================================================
+   EPISODES LIST (merged duplicates, kept advanced theme)
+   ====================================================== */
+.episodes-list-container {
+  margin-top: 20px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+.episodes-list-header {
+  background: #f2f2f2;
+  padding: 18px 25px;
+  font-size: 20px;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+  color: #222;
+}
+.episodes-list {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* episode item card */
+.episode-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color .25s;
+  background: #fff;
+}
+.episode-item:hover { background-color: #f8f8f8; }
+
+.episode-number {
+  min-width: 45px;
+  height: 45px;
+  background: #2196f3;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  margin-right: 20px;
+}
+
+.episode-info { flex-grow: 1; }
+.episode-title { font-size: 18px; font-weight: 600; color: #222; }
+.episode-subtitle { font-size: 14px; color: #666; margin-top: 4px; }
+
+.play-button {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg,#4caf50,#2e7d32);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  margin-left: 20px;
+  transition: transform .3s;
+}
+.play-button:hover { transform: scale(1.1); }
+
+/* ======================================================
+   EPISODES GRID THEME (optional darker theme preserved)
+   - kept rules but removed excessive !important usage
+   ====================================================== */
+.episodes-grid-container {
+  margin-top: 80px;
+  padding: 20px;
+  border-radius: 16px;
+  overflow: visible;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.06);
+  background: #16213e;
+  min-height: 400px;
+  position: relative;
+  z-index: 1;
+  color: #fff;
+}
+
+.episodes-header {
+  background: linear-gradient(135deg,#0f3460,#1a2a6c);
+  padding: 20px;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 20px;
+  border-radius: 12px 12px 0 0;
+}
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 25px;
+  padding: 20px;
+  justify-items: center;
+  border-radius: 12px;
+  min-height: 300px;
+  background: rgba(26,42,108,0.08);
+  position: relative;
+}
+
+.episode-card {
+  background: linear-gradient(135deg,#1a2a6c,#0f3460);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.14);
+  cursor: pointer;
+  transition: transform .25s ease, box-shadow .25s ease;
+  border: 1px solid rgba(255,255,255,0.06);
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 3/4;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.episode-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.18);
+}
+
+.episode-number-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg,#fdbb2d,#b21f1f);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  z-index: 3;
+}
+
+.episode-image-container {
+  width: 100%;
+  height: 65%;
+  overflow: hidden;
+  position: relative;
+  background: rgba(0,0,0,0.18);
+}
+.episode-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+.episode-card:hover .episode-image { transform: scale(1.05); }
+
+.episode-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: rgba(255,255,255,0.28);
+  background: rgba(0,0,0,0.15);
+}
+
+.episode-title {
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  line-height: 1.3;
+}
+
+.episode-play-button {
+  background: linear-gradient(135deg,#fdbb2d,#b21f1f);
+  color: #fff;
+  border: none;
+  border-radius: 0 0 12px 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.episode-play-button:hover {
+  background: linear-gradient(135deg,#fdbb2d,#e74c3c);
+  transform: translateY(-2px);
+}
+
+/* ======================================================
+   LOADING / ERROR STATES (kept & cleaned)
+   ====================================================== */
+.loading, .error {
+  text-align: center;
+  padding: 80px;
+  margin-top: 100px;
+}
+.loading-spinner, .error-icon { font-size: 64px; margin-bottom: 30px; }
+.loading-text, .error-text { font-size: 28px; color: #666; }
+.error-text { color: #f44336; }
+
+.retry-button {
+  padding: 18px 35px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 24px;
+  margin-top: 30px;
+}
+
+/* ======================================================
+   SETTINGS / FORMS
+   ====================================================== */
+.settings-container {
+  max-width: 800px;
+  margin: 120px auto 40px;
+  padding: 30px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.settings-title { font-size: 36px; margin-bottom: 30px; text-align:center; color:#333; }
+
+.settings-section { margin-bottom: 30px; }
+.settings-section-title { font-size: 24px; margin-bottom: 15px; color: #333; }
+
+.settings-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.settings-button {
+  padding: 15px 30px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  margin-right: 15px;
+}
+.settings-button.danger { background-color: #f44336; }
+
+/* ======================================================
+   RESPONSIVE RULES
+   ====================================================== */
+@media (max-width: 1200px) {
+  .grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+  .media-container { gap: 30px; }
+  .media-card { width: 300px; }
+}
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .header h1 { font-size: 24px; }
+  .back-button, .logout-button, .settings-button { font-size: 16px; padding: 8px 15px; }
+  .player-header-title { font-size: 16px; }
+  .player-fullscreen-button, .player-settings-button { width: 30px; height: 30px; font-size: 16px; }
+  .splash-logo { font-size: 56px; }
+}
+
+/* ======================================================
+   SMALL HELPERS & ACCESSIBILITY
+   ====================================================== */
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+.hidden { display: none !important; visibility: hidden !important; }
+
+/* ======================================================
+   END OF FILE
+   ====================================================== */
