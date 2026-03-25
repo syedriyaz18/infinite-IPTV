@@ -1,0 +1,12 @@
+ {
+   "id": "com.infinite.app",
+   "version": "1.0.0",
+   "vendor": "Infinite IPTV",
+   "type": "web",
+   "main": "index.html",
+   "title": "Infinite IPTV",
+   "icon": "icon.png",
+   "largeIcon": "largeicon.png", 
+   "requiredPermissions": ["networking"], 
+   "supportErrorPopup": true
+ }

@@ -1,0 +1,49 @@
+<!--
+Copyright (c) 2024 LG Electronics Inc.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Infinite IPTV</title>
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<script src="webOSTVjs-1.2.10/webOSTV.js" charset="utf-8"></script>
+<script src="webOSTVjs-1.2.10/webOSTV-dev.js" charset="utf-8"></script>
+<script type="text/javascript">
+	//sample code for calling LS2 API
+	webOS.service.request("luna://com.palm.systemservice", {
+		method: "clock/getTime",
+		parameters: {},
+		onSuccess: function (args) {
+			console.log("UTC:", args.utc);
+		},
+		onFailure: function (args) {
+			console.log("Failed to getTime");
+		}
+	});
+</script>
+    
+     <script src="js/splash.js"></script> <!-- Splash Screen -->
+    <script src="js/hls.min.js"></script> <!-- Local HLS.js -->
+    <script src="js/proxyService.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/categories.js"></script>
+  
+    <script src="js/streams.js"></script>
+    <script src="js/series.js"></script>
+    <script src="js/series_list.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/mediaSelection.js"></script>
+   
+    <script src="js/main.js"></script>
+<body>
+	
+</body>
+
+</html>
